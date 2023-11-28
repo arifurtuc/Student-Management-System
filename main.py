@@ -1,6 +1,7 @@
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QBoxLayout, QApplication, QWidget, QLabel, \
     QGridLayout, QLineEdit, QPushButton, QMainWindow, QTableWidget, \
-    QTableWidgetItem, QDialog, QVBoxLayout, QComboBox
+    QTableWidgetItem, QDialog, QVBoxLayout, QComboBox, QMessageBox
 from PyQt6.QtGui import QAction
 import sys
 import sqlite3
@@ -11,19 +12,25 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Student Management System")
 
-        # Creating File and Help menus in the menu bar
+        # Creating File, Help, Edit menus in the menu bar
         file_menu_item = self.menuBar().addMenu("&File")
         help_menu_item = self.menuBar().addMenu("&Help")
+        edit_menu_item = self.menuBar().addMenu("&Edit")
 
         # Adding actions to File menu
         add_student_action = QAction("Add Student", self)
-        add_student_action.triggered.connect(self.insert_data)
         file_menu_item.addAction(add_student_action)
+        add_student_action.triggered.connect(self.insert_data)
 
         # Adding actions to Help menu
         about_action = QAction("About", self)
         help_menu_item.addAction(about_action)
         about_action.setMenuRole(QAction.MenuRole.NoRole)
+
+        # Adding actions to Edit menu
+        search_action = QAction("Search", self)
+        edit_menu_item.addAction(search_action)
+        search_action.triggered.connect(self.search_data)
 
         # Creating a table widget for student data display
         self.table = QTableWidget()
@@ -52,6 +59,10 @@ class MainWindow(QMainWindow):
 
     def insert_data(self):
         dialog = InsertDialog()
+        dialog.exec()
+
+    def search_data(self):
+        dialog = SearchDialog()
         dialog.exec()
 
 
@@ -83,7 +94,6 @@ class InsertDialog(QDialog):
         button = QPushButton("Add")
         button.clicked.connect(self.add_student)
         layout.addWidget(button)
-
         self.setLayout(layout)
 
     def add_student(self):
@@ -106,6 +116,57 @@ class InsertDialog(QDialog):
 
         # Updating the main window data after insertion
         main_window.load_data()
+
+
+class SearchDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Search Student")
+        self.setFixedWidth(300)
+        self.setFixedHeight(300)
+
+        # Setting up layout for the dialog
+        layout = QVBoxLayout()
+
+        # Creating input fields for student name
+        self.student_name = QLineEdit()
+        self.student_name.setPlaceholderText("Name")
+        layout.addWidget(self.student_name)
+
+        # Adding a button to search student data
+        button = QPushButton("Search")
+        button.clicked.connect(self.search_student)
+        layout.addWidget(button)
+        self.setLayout(layout)
+
+    def search_student(self):
+        """Searches for a student in the database by name."""
+        name = self.student_name.text()
+
+        # Connecting to the database and executing the search query
+        connection = sqlite3.connect("database.db")
+        cursor = connection.cursor()
+        result = cursor.execute(
+            "SELECT * FROM students WHERE name = ?", (name, )
+        )
+        rows = list(result)
+
+        # Highlighting the matching records in the table
+        items = main_window.table.findItems(
+            name, Qt.MatchFlag.MatchFixedString
+        )
+        for item in items:
+            main_window.table.item(item.row(), 1).setSelected(True)
+
+        # Handling the case where no matching records are found
+        if not rows:
+            msg = QMessageBox()
+            msg.setWindowTitle("No Records")
+            msg.setText("No matching records found")
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.exec()
+        cursor.close()
+        connection.close()
 
 
 # Creating the application and main window
