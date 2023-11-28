@@ -1,7 +1,9 @@
 from PyQt6.QtWidgets import QBoxLayout, QApplication, QWidget, QLabel, \
-    QGridLayout, QLineEdit, QPushButton, QMainWindow, QTableWidget
+    QGridLayout, QLineEdit, QPushButton, QMainWindow, QTableWidget, \
+    QTableWidgetItem
 from PyQt6.QtGui import QAction
 import sys
+import sqlite3
 
 
 class MainWindow(QMainWindow):
@@ -25,15 +27,32 @@ class MainWindow(QMainWindow):
         # Creating a table widget for student data display
         self.table = QTableWidget()
         self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(("Id", "Name", "Course", "Mobile"))
+        self.table.setHorizontalHeaderLabels(
+            ("Id", "Name", "Course", "Mobile"))
+        self.table.verticalHeader().setVisible(False)
         self.setCentralWidget(self.table)
 
     def load_data(self):
-        pass
+        """Connecting to the SQLite database and fetching data."""
+        connection = sqlite3.connect("database.db")
+        result = connection.execute("SELECT * FROM students")
+        self.table.setRowCount(0)
+
+        # Populating the table widget with data from the database
+        for row_number, row_data in enumerate(result):
+            self.table.insertRow(row_number)
+            for column_number, data in enumerate(row_data):
+                self.table.setItem(
+                    row_number,
+                    column_number,
+                    QTableWidgetItem(str(data))
+                )
+        connection.close()
 
 
 # Creating the application and main window
 app = QApplication(sys.argv)
 window = MainWindow()
 window.show()
+window.load_data()
 sys.exit(app.exec())
