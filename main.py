@@ -6,14 +6,26 @@ from PyQt6.QtWidgets import QApplication, QLabel, QGridLayout, QLineEdit, \
 from PyQt6.QtGui import QAction, QIcon
 import sys
 import sqlite3
+import mysql.connector
 
 
 class DatabaseConnection:
-    def __init__(self, database_file="database.db"):
-        self.database_file = database_file
+    def __init__(
+            self, host="localhost", user="root",
+            password="mysqldatabase", database="sms_db"
+    ):
+        self.host = host
+        self.user = user
+        self.password = password
+        self.database = database
 
     def connect(self):
-        connection = sqlite3.connect(self.database_file)
+        connection = mysql.connector.connect(
+            host=self.host,
+            user=self.user,
+            password=self.password,
+            database=self.database
+        )
         return connection
 
 
@@ -88,7 +100,9 @@ class MainWindow(QMainWindow):
     def load_data(self):
         """Connecting to the SQLite database and fetching data."""
         connection = DatabaseConnection().connect()
-        result = connection.execute("SELECT * FROM students")
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM students")
+        result = cursor.fetchall()
         self.table.setRowCount(0)
 
         # Populating the table widget with data from the database
@@ -166,7 +180,7 @@ class InsertDialog(QDialog):
         connection = DatabaseConnection().connect()
         cursor = connection.cursor()
         cursor.execute(
-            "INSERT INTO students (name, course, mobile) VALUES (?, ?, ?)",
+            "INSERT INTO students (name, course, mobile) VALUES (%s, %s, %s)",
             (name, course, mobile)
         )
         connection.commit()
@@ -215,9 +229,10 @@ class SearchDialog(QDialog):
         # Connecting to the database and executing the search query
         connection = DatabaseConnection().connect()
         cursor = connection.cursor()
-        result = cursor.execute(
-            "SELECT * FROM students WHERE name = ?", (name,)
+        cursor.execute(
+            "SELECT * FROM students WHERE name = %s", (name,)
         )
+        result = cursor.fetchall()
         rows = list(result)
 
         # Highlighting the matching records in the table
@@ -282,8 +297,8 @@ class EditDialog(QDialog):
         connection = DatabaseConnection().connect()
         cursor = connection.cursor()
         cursor.execute(
-            "UPDATE students SET name = ?, course = ?, mobile = ? "
-            "WHERE id = ?",
+            "UPDATE students SET name = %s, course = %s, mobile = %s "
+            "WHERE id = %s",
             (
                 self.student_name.text(),
                 self.course_name.currentText(),
@@ -345,7 +360,7 @@ class DeleteDialog(QDialog):
         connection = DatabaseConnection().connect()
         cursor = connection.cursor()
         cursor.execute(
-            "DELETE from students WHERE id = ?",
+            "DELETE from students WHERE id = %s",
             (student_id,)
         )
         connection.commit()
