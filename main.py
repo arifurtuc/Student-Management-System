@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 # Load database password from environment variables
 load_dotenv()
-db_password = os.getenv("PASSWORD")
+db_password = os.getenv("DB_PASSWORD")
 
 
 class DatabaseConnection:
