@@ -5,14 +5,19 @@ from PyQt6.QtWidgets import QApplication, QLabel, QGridLayout, QLineEdit, \
 
 from PyQt6.QtGui import QAction, QIcon
 import sys
-import sqlite3
 import mysql.connector
+import os
+from dotenv import load_dotenv
+
+# Load database password from environment variables
+load_dotenv()
+db_password = os.getenv("PASSWORD")
 
 
 class DatabaseConnection:
     def __init__(
             self, host="localhost", user="root",
-            password="mysqldatabase", database="sms_db"
+            password=db_password, database="sms_db"
     ):
         self.host = host
         self.user = user
