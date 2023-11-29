@@ -1,8 +1,7 @@
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QBoxLayout, QApplication, QWidget, QLabel, \
-    QGridLayout, QLineEdit, QPushButton, QMainWindow, QTableWidget, \
-    QTableWidgetItem, QDialog, QVBoxLayout, QComboBox, QMessageBox, QToolBar, \
-    QStatusBar
+from PyQt6.QtWidgets import QApplication, QLabel, QGridLayout, QLineEdit, \
+    QPushButton, QMainWindow, QTableWidget, QTableWidgetItem, QDialog, \
+    QVBoxLayout, QComboBox, QMessageBox, QToolBar, QStatusBar
 
 from PyQt6.QtGui import QAction, QIcon
 import sys
@@ -141,6 +140,8 @@ class InsertDialog(QDialog):
         button = QPushButton("Add")
         button.clicked.connect(self.add_student)
         layout.addWidget(button)
+
+        # Set the layout for the dialog window
         self.setLayout(layout)
 
     def add_student(self):
@@ -164,6 +165,14 @@ class InsertDialog(QDialog):
         # Updating the main window data after insertion
         main_window.load_data()
 
+        # Close the current dialog window after successful insertion
+        self.close()
+
+        # Display a confirmation message
+        title = "Success"
+        message = "New student has been added successfully!"
+        ConfirmationMessageBox(title, message)
+
 
 class SearchDialog(QDialog):
     def __init__(self):
@@ -184,6 +193,8 @@ class SearchDialog(QDialog):
         button = QPushButton("Search")
         button.clicked.connect(self.search_student)
         layout.addWidget(button)
+
+        # Set the layout for the dialog window
         self.setLayout(layout)
 
     def search_student(self):
@@ -207,11 +218,9 @@ class SearchDialog(QDialog):
 
         # Handling the case where no matching records are found
         if not rows:
-            msg = QMessageBox()
-            msg.setWindowTitle("No Records")
-            msg.setText("No matching records found")
-            msg.setIcon(QMessageBox.Icon.Warning)
-            msg.exec()
+            title = "No Records"
+            message = "No matching records found!"
+            ConfirmationMessageBox(title, message)
         cursor.close()
         connection.close()
 
@@ -219,7 +228,7 @@ class SearchDialog(QDialog):
 class EditDialog(QDialog):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Update New Student")
+        self.setWindowTitle("Update Student Data")
         self.setFixedWidth(300)
         self.setFixedHeight(300)
 
@@ -252,6 +261,8 @@ class EditDialog(QDialog):
         button = QPushButton("Update")
         button.clicked.connect(self.update_student)
         layout.addWidget(button)
+
+        # Set the layout for the dialog window
         self.setLayout(layout)
 
     def update_student(self):
@@ -260,7 +271,8 @@ class EditDialog(QDialog):
         connection = sqlite3.connect(db_path)
         cursor = connection.cursor()
         cursor.execute(
-            "UPDATE students SET name = ?, course = ?, mobile = ? WHERE id = ?",
+            "UPDATE students SET name = ?, course = ?, mobile = ? "
+            "WHERE id = ?",
             (
                 self.student_name.text(),
                 self.course_name.currentText(),
@@ -275,9 +287,79 @@ class EditDialog(QDialog):
         # Refreshing the data displayed in the main window after update
         main_window.load_data()
 
+        # Close the current dialog window after successful update
+        self.close()
+
+        # Display a confirmation message
+        title = "Success"
+        message = "Student data has been updated successfully!"
+        ConfirmationMessageBox(title, message)
+
 
 class DeleteDialog(QDialog):
-    pass
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Delete Student Data")
+
+        # Setting up layout for the dialog
+        layout = QGridLayout()
+
+        # Create a label to display the confirmation message
+        confirmation = QLabel("Are you sure you want to delete?")
+
+        # Create 'Yes' button and connect it to the delete_student method
+        yes_button = QPushButton("Yes")
+        yes_button.clicked.connect(self.delete_student)
+
+        # Create 'No' button and connect it to the built-in reject method of
+        # QDialog
+        no_button = QPushButton("No")
+        no_button.clicked.connect(self.reject)
+
+        # Add the components to the layout in specific positions
+        layout.addWidget(confirmation, 0, 0, 1, 2)
+        layout.addWidget(yes_button, 1, 0)
+        layout.addWidget(no_button, 1, 1)
+
+        # Set the layout for the dialog window
+        self.setLayout(layout)
+
+    def delete_student(self):
+        """Deletes the student's data from database."""
+        # Retrieving the student ID of the selected row
+        selected_index = main_window.table.currentRow()
+        student_id = main_window.table.item(selected_index, 0).text()
+
+        # Connecting to the database and deleting student data
+        connection = sqlite3.connect(db_path)
+        cursor = connection.cursor()
+        cursor.execute(
+            "DELETE from students WHERE id = ?",
+            (student_id,)
+        )
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+        # Refreshing the data displayed in the main window after delete
+        main_window.load_data()
+
+        # Close the current dialog window after successful deletion
+        self.close()
+
+        # Display a confirmation message
+        title = "Success"
+        message = "Student data has been deleted successfully!"
+        ConfirmationMessageBox(title, message)
+
+
+class ConfirmationMessageBox:
+    def __init__(self, title, message):
+        """Displays a confirmation message using QMessageBox"""
+        confirmation_widget = QMessageBox()
+        confirmation_widget.setWindowTitle(title)
+        confirmation_widget.setText(message)
+        confirmation_widget.exec()
 
 
 # Creating the application and main window
