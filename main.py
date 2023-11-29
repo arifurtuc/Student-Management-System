@@ -1,7 +1,9 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QBoxLayout, QApplication, QWidget, QLabel, \
     QGridLayout, QLineEdit, QPushButton, QMainWindow, QTableWidget, \
-    QTableWidgetItem, QDialog, QVBoxLayout, QComboBox, QMessageBox, QToolBar
+    QTableWidgetItem, QDialog, QVBoxLayout, QComboBox, QMessageBox, QToolBar, \
+    QStatusBar
+
 from PyQt6.QtGui import QAction, QIcon
 import sys
 import sqlite3
@@ -19,7 +21,8 @@ class MainWindow(QMainWindow):
         edit_menu_item = self.menuBar().addMenu("&Edit")
 
         # Adding actions to File menu
-        add_student_action = QAction(QIcon("icons/add.png"), "Add Student", self)
+        add_student_action = QAction(QIcon("icons/add.png"), "Add Student",
+                                     self)
         file_menu_item.addAction(add_student_action)
         add_student_action.triggered.connect(self.insert_data)
 
@@ -48,6 +51,31 @@ class MainWindow(QMainWindow):
         toolbar.addAction(add_student_action)
         toolbar.addAction(search_action)
 
+        # Creating status bar and adding elements
+        self.statusbar = QStatusBar()
+        self.setStatusBar(self.statusbar)
+
+        # Detecting cell click
+        self.table.cellClicked.connect(self.cell_clicked)
+
+    def cell_clicked(self):
+        """Handles the action when a cell is clicked in the table."""
+        # Creating buttons for editing and deleting records
+        edit_button = QPushButton("Edit Record")
+        edit_button.clicked.connect(self.edit_data)
+        delete_button = QPushButton("Delete Record")
+        delete_button.clicked.connect(self.delete_data)
+
+        # Removing existing buttons from the status bar
+        children = self.findChildren(QPushButton)
+        if children:
+            for child in children:
+                self.statusbar.removeWidget(child)
+
+        # Adding edit and delete buttons to the status bar
+        self.statusbar.addWidget(edit_button)
+        self.statusbar.addWidget(delete_button)
+
     def load_data(self):
         """Connecting to the SQLite database and fetching data."""
         connection = sqlite3.connect("database.db")
@@ -71,6 +99,14 @@ class MainWindow(QMainWindow):
 
     def search_data(self):
         dialog = SearchDialog()
+        dialog.exec()
+
+    def edit_data(self):
+        dialog = EditDialog()
+        dialog.exec()
+
+    def delete_data(self):
+        dialog = DeleteDialog()
         dialog.exec()
 
 
@@ -155,7 +191,7 @@ class SearchDialog(QDialog):
         connection = sqlite3.connect("database.db")
         cursor = connection.cursor()
         result = cursor.execute(
-            "SELECT * FROM students WHERE name = ?", (name, )
+            "SELECT * FROM students WHERE name = ?", (name,)
         )
         rows = list(result)
 
@@ -175,6 +211,14 @@ class SearchDialog(QDialog):
             msg.exec()
         cursor.close()
         connection.close()
+
+
+class EditDialog(QDialog):
+    pass
+
+
+class DeleteDialog(QDialog):
+    pass
 
 
 # Creating the application and main window
