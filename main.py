@@ -32,6 +32,7 @@ class MainWindow(QMainWindow):
         about_action = QAction("About", self)
         help_menu_item.addAction(about_action)
         about_action.setMenuRole(QAction.MenuRole.NoRole)
+        about_action.triggered.connect(self.about)
 
         # Adding actions to Edit menu
         search_action = QAction(QIcon("icons/search.png"), "Search", self)
@@ -109,6 +110,10 @@ class MainWindow(QMainWindow):
 
     def delete_data(self):
         dialog = DeleteDialog()
+        dialog.exec()
+
+    def about(self):
+        dialog = AboutDialog()
         dialog.exec()
 
 
@@ -353,13 +358,23 @@ class DeleteDialog(QDialog):
         ConfirmationMessageBox(title, message)
 
 
-class ConfirmationMessageBox:
+class AboutDialog(QMessageBox):
+    def __init__(self):
+        """Displays about using QMessageBox"""
+        super().__init__()
+        self.setWindowTitle("About")
+        content = """This app allows user to manage student data by adding, 
+        updating, deleting functionality."""
+        self.setText(content)
+
+
+class ConfirmationMessageBox(QMessageBox):
     def __init__(self, title, message):
         """Displays a confirmation message using QMessageBox"""
-        confirmation_widget = QMessageBox()
-        confirmation_widget.setWindowTitle(title)
-        confirmation_widget.setText(message)
-        confirmation_widget.exec()
+        super().__init__()
+        self.setWindowTitle(title)
+        self.setText(message)
+        self.exec()
 
 
 # Creating the application and main window
